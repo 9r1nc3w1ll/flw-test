@@ -8,7 +8,7 @@ const FeeConfig = require("./models/fee_config");
  * @param {import("express").Request} req 
  * @param {import("express").Response} res 
  */
-module.exports.setFees = async (req, res) => {
+const setFees = async (req, res) => {
   const inputIsValid = validateSetFeesInput(req.body, res);
 
   if (!inputIsValid) {
@@ -25,6 +25,71 @@ module.exports.setFees = async (req, res) => {
 
   res.status(200).json({ status: "ok" });
 };
+
+/**
+ * Computes transaction fee
+ * 
+ * @param {import("express").Request} req 
+ * @param {import("express").Response} res 
+ */
+ const computeFee = async (req, res) => {
+  /**
+   * @type { ComputeFeeInput }
+   */
+  const payload = req.body;
+  if (!payload) {}
+
+  const configs = await FeeConfig.getFeeConfigs(payload);
+
+  if (!configs.length) {
+    res.status(400).json({ message: "No matching fee config found" });
+    return;
+  }
+
+  const bestConfig = configs.reduce((previous, current) => {
+    if (current.specificity > previous.specificity) return current;
+    return previous;
+  });
+
+  const feeValue = calculateChargeAmount(bestConfig.type, payload.Amount, bestConfig.value);
+
+  res.json({
+    AppliedFeeID: bestConfig.id,
+    AppliedFeeValue: feeValue,
+    ChargeAmount: payload.Customer.BearsFee ? (payload.Amount + feeValue) : payload.Amount,
+    SettlementAmount: !payload.Customer.BearsFee ? payload.Amount - feeValue : payload.Amount,
+  });
+}
+
+/**
+ * 
+ * @param { string } type 
+ * @param { number } total 
+ * @param { string } value 
+ * @returns { number }
+ */
+const calculateChargeAmount = (type, total, value) => {
+  let split, perc, flat;
+
+  switch (type) {
+    case "PERC":
+      split = value.split(":");
+      perc = (split.length > 1) ? split[1] : split[0];
+      return (total * Number(perc) / 100);
+
+    case "FLAT":
+      split = value.split(":");
+      return split[0];
+
+    case "FLAT_PERC":
+      split = value.split(":");
+      [flat, perc = 0] = value.split(":");
+      return (Number(flat) + (Number(perc) * total / 100))
+  
+    default:
+      return 0;
+  }
+}
 
 /**
  * @param { SetFeesInput } requestBody
@@ -51,6 +116,33 @@ const parseSetFeesInput = (requestBody) => {
 }
 
 /**
+ * @typedef { object } ComputeFeeInput
+ * @property { string } ID
+ * @property { number } Amount
+ * @property { string } Currency
+ * @property { string } CurrencyCountry
+ * @property { PaymentEntity } PaymentEntity
+ * @property { Customer } Customer
+ */
+
+/**
+ * @typedef { object } Customer
+ * @property { string } ID
+ * @property { boolean } BearsFee
+ */
+
+/**
+ * @typedef { object } PaymentEntity
+ * @property { string } ID
+ * @property { string } Issuer
+ * @property { string } Brand
+ * @property { string } Number
+ * @property { string } SixID
+ * @property { string } Type
+ * @property { string } Country
+ */
+
+/**
  * @typedef { object } SetFeesInput
  * @property { string } FeeConfigurationSpec
  */
@@ -65,3 +157,8 @@ const parseSetFeesInput = (requestBody) => {
  * @property { string } type
  * @property { string } value
  */
+
+module.exports = {
+  setFees,
+  computeFee,
+}
