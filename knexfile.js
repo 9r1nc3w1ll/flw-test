@@ -1,17 +1,17 @@
 // Update with your config settings.
 
-require('dotenv').config();
+require("dotenv").config();
 
 /**
  * @type { Object.<string, import("knex").Knex.Config> }
  */
 module.exports = {
-  client: 'postgres',
+  client: "postgres",
   connection: {
-    database: 'd64svpq1i8rhq6',
-    user:     'myzzevbdqmhwgs',
-    password: 'f9e07d1a0baf090fd2916796b5fa1fd78d9a6bae8d702a15d7d55a911d9852aa',
-    host: 'ec2-54-76-249-45.eu-west-1.compute.amazonaws.com',
+    database: "d2rt76hev4ha6l",
+    user:     "yzhdavjypfwdty",
+    password: "0e3f533fab15a18a90a282413416603ea6849758992a428e94a8023dc46b9a63",
+    host: "ec2-54-73-167-224.eu-west-1.compute.amazonaws.com",
     ssl: { rejectUnauthorized: false },
   },
   pool: {
@@ -19,6 +19,6 @@ module.exports = {
     max: 10
   },
   migrations: {
-    tableName: 'knex_migrations'
+    tableName: "knex_migrations"
   },
 };

@@ -1,9 +1,10 @@
+require('dotenv').config();
 const express = require("express");
 const bodyParser = require('body-parser');
 
 const { setFees, computeFee } = require("./handlers");
 const app = express();
-const port = 9000;
+const port = process.env.PORT || 9000;
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
